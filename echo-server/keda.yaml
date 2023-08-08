@@ -1,0 +1,32 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: cpu-scaledobject
+  namespace: default
+spec:
+  scaleTargetRef:
+    name: helloweb
+  pollingInterval:  30                               # Optional. Default: 30 seconds
+  cooldownPeriod:   300                              # Optional. Default: 300 seconds
+  idleReplicaCount: 0                                # Optional. Default: ignored, must be less than minReplicaCount 
+  minReplicaCount:  1                                # Optional. Default: 0
+  maxReplicaCount:  100                               # Optional. Default: 100
+  fallback:                                          # Optional. Section to specify fallback options
+    failureThreshold: 3                              # Mandatory if fallback section is included
+    replicas: 6                                      # Mandatory if fallback section is included
+  advanced:                                          # Optional. Section to specify advanced options
+    restoreToOriginalReplicaCount: true        # Optional. Default: false
+    horizontalPodAutoscalerConfig:                   # Optional. Section to specify HPA related options
+      name:  helloweb                 # Optional. Default: keda-hpa-{scaled-object-name}
+      behavior:                                      # Optional. Use to modify HPA's scaling behavior
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies:
+          - type: Percent
+            value: 100
+            periodSeconds: 15
+  triggers:
+  - type: cpu
+    metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
+    metadata:
+      value: "95"
