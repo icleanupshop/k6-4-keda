@@ -3,3 +3,9 @@ gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --
 echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" |  tee /etc/apt/sources.list.d/k6.list
 apt-get update
 apt-get install k6
+
+
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install kube-state-metrics prometheus-community/kube-state-metrics 

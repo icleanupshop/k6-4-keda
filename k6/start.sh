@@ -1,10 +1,25 @@
 influxd &
 
-influx setup --skip-verify --username k6 --password Qwerty123 --token k6 --org k6 --bucket k6 --retention 0 
+export INFLUXDB_TOKEN=${INFLUXDB_TOKEN:=`uuid`}
+export INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD:='changeMe'}
+export INFLUXDB_HOST=${INFLUXDB_HOST:='http://localhost'}
+export INFLUXDB_PORT=${INFLUXDB_PORT:='8086'}
+export INFLUXDB_USERNAME=${INFLUXDB_USERNAME:='k6'}
+export INFLUXDB_BUCKET_NAME=${INFLUXDB_BUCKET_NAME:='k6'}
+export INFLUXDB_ORG=${INFLUXDB_ORG:='k6'}
+export INFLUXDB_RETENTION=${INFLUXDB_RETENTION:='0'}
+export K6_VIRTUAL_USER_COUNT=${K6_VIRTUAL_USER_COUNT:='1000'}
+export K6_TEST_DURATION=${K6_TEST_DURATION:='30m'}
+sleep 5
 
-fg
-#K6_INFLUXDB_ORGANIZATION="k6" \
-#K6_INFLUXDB_BUCKET="k6" \
-#K6_INFLUXDB_TOKEN="k6" \
-#K6_INFLUXDB_ADDR="127.0.0.1:8086" \
-#k6 run --vus 10000 --duration 30m /test_scripts/test.js -o xk6-influxdb
+influx setup --host ${INFLUXDB_HOST}:${INFLUXDB_PORT} --skip-verify -f --username ${INFLUXDB_USERNAME} --password ${INFLUXDB_PASSWORD} --token ${INFLUXDB_TOKEN} --org ${INFLUXDB_ORG} --bucket ${INFLUXDB_BUCKET_NAME} --retention ${INFLUXDB_RETENTION} --name k6                                                                           
+
+sleep 5
+
+K6_INFLUXDB_ORGANIZATION=${INFLUXDB_ORG} \
+K6_INFLUXDB_BUCKET=${INFLUXDB_BUCKET_NAME} \
+K6_INFLUXDB_TOKEN=${INFLUXDB_TOKEN} \
+K6_INFLUXDB_ADDR=${INFLUXDB_HOST}:${INFLUXDB_PORT} \
+k6 run --vus ${K6_VIRTUAL_USER_COUNT} --duration ${K6_TEST_DURATION} /test_scripts/test.js -o xk6-influxdb
+
+bash
