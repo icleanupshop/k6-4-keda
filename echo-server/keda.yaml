@@ -7,17 +7,17 @@ spec:
   scaleTargetRef:
     name: helloweb
   pollingInterval:  30                               # Optional. Default: 30 seconds
-  cooldownPeriod:   300                              # Optional. Default: 300 seconds
+  cooldownPeriod:   60                               # Optional. Default: 300 seconds
   idleReplicaCount: 0                                # Optional. Default: ignored, must be less than minReplicaCount 
   minReplicaCount:  1                                # Optional. Default: 0
-  maxReplicaCount:  100                               # Optional. Default: 100
+  maxReplicaCount:  100                              # Optional. Default: 100
   fallback:                                          # Optional. Section to specify fallback options
     failureThreshold: 3                              # Mandatory if fallback section is included
     replicas: 6                                      # Mandatory if fallback section is included
   advanced:                                          # Optional. Section to specify advanced options
-    restoreToOriginalReplicaCount: true        # Optional. Default: false
+    restoreToOriginalReplicaCount: true              # Optional. Default: false
     horizontalPodAutoscalerConfig:                   # Optional. Section to specify HPA related options
-      name:  helloweb                 # Optional. Default: keda-hpa-{scaled-object-name}
+      name:  helloweb                                # Optional. Default: keda-hpa-{scaled-object-name}
       behavior:                                      # Optional. Use to modify HPA's scaling behavior
         scaleDown:
           stabilizationWindowSeconds: 300
@@ -26,7 +26,19 @@ spec:
             value: 100
             periodSeconds: 15
   triggers:
-  - type: cpu
-    metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
+  - type: new-relic
     metadata:
-      value: "20"
+      # Required: Account - Subaccount to run the query on
+      account: "$NR_ACCOUNT_ID"
+      # Required: QueryKey - Api key to connect to New Relic
+      queryKey: "$NR_API_KEY"
+      # Optional: nrRegion - Region to query data for. Default value is US.
+      region: "$NR_REGION"
+      # Optional: noDataError - If the query returns no data should this be treated as an error. Default value is false.
+      noDataError: "true"
+      # Required: nrql
+      nrql: "SELECT sum(k6.http_req_duration.sum.percentiles) FROM Metric WHERE percentile = 90 SINCE 30 seconds ago"
+      # Required: threshold
+      threshold: "2000"
+      # Optional: activationThreshold - Target value for activating the scaler.
+      #activationThreshold: "20"

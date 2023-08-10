@@ -10,6 +10,7 @@ export INFLUXDB_ORG=${INFLUXDB_ORG:='k6'}
 export INFLUXDB_RETENTION=${INFLUXDB_RETENTION:='0'}
 export K6_VIRTUAL_USER_COUNT=${K6_VIRTUAL_USER_COUNT:='1000'}
 export K6_TEST_DURATION=${K6_TEST_DURATION:='30m'}
+export K6_OUTPUT_INTEGRATION=${K6_OUTPUT_INTEGRATION:='xk6-influxdb'}
 sleep 5
 
 influx setup --host ${INFLUXDB_HOST}:${INFLUXDB_PORT} --skip-verify -f --username ${INFLUXDB_USERNAME} --password ${INFLUXDB_PASSWORD} --token ${INFLUXDB_TOKEN} --org ${INFLUXDB_ORG} --bucket ${INFLUXDB_BUCKET_NAME} --retention ${INFLUXDB_RETENTION} --name k6                                                                           
@@ -20,6 +21,6 @@ K6_INFLUXDB_ORGANIZATION=${INFLUXDB_ORG} \
 K6_INFLUXDB_BUCKET=${INFLUXDB_BUCKET_NAME} \
 K6_INFLUXDB_TOKEN=${INFLUXDB_TOKEN} \
 K6_INFLUXDB_ADDR=${INFLUXDB_HOST}:${INFLUXDB_PORT} \
-k6 run --vus ${K6_VIRTUAL_USER_COUNT} --duration ${K6_TEST_DURATION} /test_scripts/test.js -o xk6-influxdb
+k6 run --vus ${K6_VIRTUAL_USER_COUNT} --duration ${K6_TEST_DURATION} /test_scripts/test.js -o ${K6_OUTPUT_INTEGRATION}
 
 bash

@@ -1,3 +1,4 @@
+
 # Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,10 +40,10 @@ spec:
         resources:
           requests:
             cpu: 100m
-            memory: 200Mi
+            memory: 100Mi
           limits:
             cpu: 100m
-            memory: 200Mi
+            memory: 100Mi
 
 # [END container_helloapp_deployment]
 # [END gke_manifests_helloweb_deployment_deployment_helloweb]
