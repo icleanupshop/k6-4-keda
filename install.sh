@@ -107,6 +107,7 @@ function install () {
     kubectl apply -f ./echo-server/service-load-balancer.yaml --context k3d-${K6_K3D_CLUSTER_NAME}
 
     #NRI Stats
+    docker stop newrelic-statsd 
     docker run --rm  -d\
     --name newrelic-statsd \
     -h $(hostname) \
