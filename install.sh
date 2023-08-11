@@ -16,13 +16,16 @@ function help()
    echo "will setup a new k3d cluster with a metrics exported to an local influxDB or"
    echo "to NewRelic. With newrelic metric exports, you can make NRQL quires to scale. Happy days!"
    echo
-   echo "Syntax: ./install [-i|k|a|e]"
+   echo "Syntax: ./install [-i|k|a|e|l]"
    echo "options:"
    echo "i     install k3d with KEDA and local statsD for NR."
    echo "k     NR ingest license key."
    echo "q     NR browse license key."
    echo "a     NR account number."
-   echo "e     To use NR EU, by default statsD will use the US NR."
+   echo "e     To use NR EU, by default statsD will use the US NR,"
+   echo "l     IP address for influxDB to listen for connections."
+   echo "      This is an interface on your local machine (YOU CAN NOT USE THE loopback device)."
+
    echo
 }
 
@@ -107,15 +110,23 @@ function install () {
     kubectl apply -f ./echo-server/service-load-balancer.yaml --context k3d-${K6_K3D_CLUSTER_NAME}
 
     #NRI Stats
-    docker stop newrelic-statsd 
+    docker stop k6-4-keda-newrelic-statsd 
     docker run --rm  -d\
-    --name newrelic-statsd \
+    --name k6-4-keda-newrelic-statsd \
     -h $(hostname) \
     -e NR_ACCOUNT_ID=${NR_ACCOUNT_ID} \
     -e NR_API_KEY=${NR_API_KEY} \
     -p 8125:8125/udp \
     ${NR_EU_OPTION} \
     newrelic/nri-statsd:test
+
+    #Build and run influxDB docker image/container
+    docker stop k6-4-keda-infuxdb
+    docker build --tag k6-4-keda-influxdb influxdb
+    docker run --rm -it -d --name k6-4-keda-influxdb --network host k6-4-keda-influxdb
+
+    #Build k6 docker image
+    docker build --tag k6-4-keda-k6 k6
 
 
     #Install NR agent for NR into the k3d cluster (This streams k8. metrics into NR)
@@ -126,10 +137,18 @@ function install () {
     #Install KEDA
     helm repo add kedacore https://kedacore.github.io/charts
     helm repo update
-    helm install keda kedacore/keda --namespace keda --create-namespace
+    helm install --kube-context k3d-${K6_K3D_CLUSTER_NAME} keda kedacore/keda --namespace keda --create-namespace
 
     #Install the KEDA scaledobject CRD for a simple scaling event
-    ( cat echo-server/keda.yaml | NR_ACCOUNT_ID=${NR_ACCOUNT_ID} NR_BROWSE_KEY=${NR_BROWSE_KEY} NR_REGION=${NR_REGION} envsubst) | k apply -f - 
+    #sed -i -r "s/<<LOCAL_IP>>/$LOCAL_IP/g" echo-server/keda.yaml
+    ( cat echo-server/keda.yaml | \
+    NR_ACCOUNT_ID=${NR_ACCOUNT_ID} \
+    NR_BROWSE_KEY=${NR_BROWSE_KEY} \
+    NR_REGION=${NR_REGION} \
+    LOCAL_IP=${LOCAL_IP} \
+    INFLUXDB_TOKEN=${INFLUXDB_TOKEN} \
+    envsubst ) | \
+    k apply --context k3d-${K6_K3D_CLUSTER_NAME} -f - 
 
     RETRIES=10
     WAIT_TIME_BETWEEN_RETRIES=10
@@ -148,10 +167,13 @@ function install () {
 		sleep $WAIT_TIME_BETWEEN_RETRIES
 	fi
     done
-    sed -i -r "s/<<ECHO_SERVER_IP_ADDRESS>>/$ECHO_SERVER_IP_ADDRESS/g"    ./k6/test.js
+    sed -i -r "s/<<ECHO_SERVER_IP_ADDRESS>>/$ECHO_SERVER_IP_ADDRESS/g" ./k6/test.js
     
-    log "INFO" "I think it is installed.  Now you can run ./run.sh to kick off a k6 test"
+    log "INFO" "I think it is installed.  Running a quick 1 VU k6 test for 1 minute, just to check things out, then I'll drop you into a bash within the k6 container. You're welcome."
 
+    docker run -it --name k6-4-keda-k6 --rm --network host -e K6_VIRTUAL_USER_COUNT=1 -e K6_OUTPUT_INTEGRATION=statsd -e K6_TEST_DURATION='1m' k6-4-keda-k6 
+
+    log "INFO" "Hope that work, because I'm done, you're on your own from now on. Bonne chance!"
 
 
 
@@ -162,7 +184,7 @@ function install () {
 # Process the input options. Add options as needed.        #
 ############################################################
 # Get the options
-while getopts "h:e:a:k:q:" option; do
+while getopts "h:e:a:k:q:l:" option; do
    case $option in
       h) # display Help
          help
@@ -176,6 +198,8 @@ while getopts "h:e:a:k:q:" option; do
          NR_API_KEY=$OPTARG;;
       q) #Set NR browse(read only) key so KEDA scaled objects can send NRQL
          NR_BROWSE_KEY=$OPTARG;;   
+      l) #Set the IP address for influxDB in the local host
+         LOCAL_IP=$OPTARG;;  
      \?) # Invalid option
          echo "Error: Invalid option"
          exit;;    

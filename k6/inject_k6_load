@@ -1,0 +1,64 @@
+############################################################
+# Functions                                                #
+############################################################
+function help()
+{
+   # Display Help
+   echo "K6 for KEDA wrapper."
+   echo "This script inject load into the keda k3d cluser echo service."
+   echo "Example usage: inject_k6_load -v 1000 -d 30m"
+   echo 
+   echo "This will run k6 with 1000 virtual users for 30 minutes"
+   echo
+   echo "Syntax: inject_k6_load [-v|d]"
+   echo "options:"
+   echo "v     Number virtual users to send requests to KEDA k3d"
+   echo "d     How long should k6 inject load in [s|m|h]."
+   echo
+}
+
+function inject() {
+   export INFLUXDB_TOKEN=${INFLUXDB_TOKEN:="k6"}
+   export INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD:='changeMe'}
+   export INFLUXDB_HOST=${INFLUXDB_HOST:='http://localhost'}
+   export INFLUXDB_PORT=${INFLUXDB_PORT:='8086'}
+   export INFLUXDB_USERNAME=${INFLUXDB_USERNAME:='k6'}
+   export INFLUXDB_BUCKET=${INFLUXDB_BUCKET:='k6'}
+   export INFLUXDB_ORG=${INFLUXDB_ORG:='k6'}
+   export INFLUXDB_RETENTION=${INFLUXDB_RETENTION:='0'}
+   export K6_VIRTUAL_USER_COUNT=${K6_VIRTUAL_USER_COUNT:='1000'}
+   export K6_TEST_DURATION=${K6_TEST_DURATION:='2m'}
+   export K6_OUTPUT_INTEGRATION=${K6_OUTPUT_INTEGRATION:='xk6-influxdb'}
+
+   K6_INFLUXDB_ORGANIZATION=${INFLUXDB_ORG} \
+   K6_INFLUXDB_BUCKET=${INFLUXDB_BUCKET} \
+   K6_INFLUXDB_TOKEN=${INFLUXDB_TOKEN} \
+   K6_INFLUXDB_ADDR=${INFLUXDB_HOST}:${INFLUXDB_PORT} \
+   k6 run --vus ${K6_VIRTUAL_USER_COUNT} --duration ${K6_TEST_DURATION} /test_scripts/test.js -o ${K6_OUTPUT_INTEGRATION} -o xk6-influxdb
+}
+
+
+
+############################################################
+# Process the input options. Add options as needed.        #
+############################################################
+# Get the options
+while getopts "v:d:" option; do
+   case $option in
+      h) # display Help
+         help
+         exit;;
+      v) # Set virtual user count
+         K6_VIRTUAL_USER_COUNT=$OPTARG;;
+      d) #Set how long the test will run
+         K6_TEST_DURATION=$OPTARG;;
+     \?) # Invalid option
+         echo "Error: Invalid option"
+         exit;;    
+   esac
+done
+
+############################################################
+# The business                                             #
+############################################################
+inject

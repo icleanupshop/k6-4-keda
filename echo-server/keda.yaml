@@ -46,3 +46,17 @@ spec:
       threshold: "2000"
       # Optional: activationThreshold - Target value for activating the scaler.
       #activationThreshold: "20"
+  - type: influxdb
+    metadata:
+      serverURL: "http://$LOCAL_IP:8086"
+      organizationName: "k6"
+      thresholdValue: '1'
+      activationThresholdValue: '2'
+      query: |
+        from(bucket: "k6")
+        |> range(start: -300s)
+        |> filter(fn: (r) => r["_measurement"] == "http_req_blocked")
+        |> filter(fn: (r) => r["_field"] == "value")
+        |> yield(name: "last") 
+      authToken: "k6"
+
