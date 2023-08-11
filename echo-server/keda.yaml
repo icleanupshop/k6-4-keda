@@ -8,7 +8,7 @@ spec:
     name: helloweb
   pollingInterval:  30                               # Optional. Default: 30 seconds
   cooldownPeriod:   60                               # Optional. Default: 300 seconds
-  idleReplicaCount: 0                                # Optional. Default: ignored, must be less than minReplicaCount 
+  idleReplicaCount: 1                                # Optional. Default: ignored, must be less than minReplicaCount 
   minReplicaCount:  1                                # Optional. Default: 0
   maxReplicaCount:  100                              # Optional. Default: 100
   fallback:                                          # Optional. Section to specify fallback options
@@ -26,6 +26,10 @@ spec:
             value: 100
             periodSeconds: 15
   triggers:
+  - type: cpu
+    metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
+    metadata:
+      value: "50"
   - type: new-relic
     metadata:
       # Required: Account - Subaccount to run the query on
