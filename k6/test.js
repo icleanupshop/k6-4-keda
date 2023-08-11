@@ -5,7 +5,7 @@ import { sleep } from 'k6';
 
 export default function () {
 
-  http.get('http://<<ECHO_SERVER_IP_ADDRESS>>');
+  http.get('http://172.27.0.2');
 
   sleep(1);
 

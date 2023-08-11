@@ -9,7 +9,7 @@ spec:
   pollingInterval:  30                               # Optional. Default: 30 seconds
   cooldownPeriod:   60                               # Optional. Default: 300 seconds
   idleReplicaCount: 1                                # Optional. Default: ignored, must be less than minReplicaCount 
-  minReplicaCount:  1                                # Optional. Default: 0
+  minReplicaCount:  3                                # Optional. Default: 0
   maxReplicaCount:  100                              # Optional. Default: 100
   fallback:                                          # Optional. Section to specify fallback options
     failureThreshold: 3                              # Mandatory if fallback section is included
