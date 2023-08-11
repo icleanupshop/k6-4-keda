@@ -131,8 +131,23 @@ function install () {
     #Install the KEDA scaledobject CRD for a simple scaling event
     ( cat echo-server/keda.yaml | NR_ACCOUNT_ID=${NR_ACCOUNT_ID} NR_BROWSE_KEY=${NR_BROWSE_KEY} NR_REGION=${NR_REGION} envsubst) | k apply -f - 
 
-    
-    ECHO_SERVER_IP_ADDRESS=`kubectl  get service helloweb | grep -v NAME |  tr -s ' ' | cut -d ' ' -f 4`
+    RETRIES=10
+    WAIT_TIME_BETWEEN_RETRIES=10
+    ATTEMPTS=0
+    log "INFO" "Getting IP of echo-server kubernetes LB..."
+    while [ $ATTEMPTS -le $RETRIES ]
+    do
+        ((ATTEMPTS++))
+        log "INFO" "Attempt number $ATTEMPTS."
+        ECHO_SERVER_IP_ADDRESS=`kubectl  get service helloweb | grep -v NAME |  tr -s ' ' | cut -d ' ' -f 4`
+        if [[ $ECHO_SERVER_IP_ADDRESS =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]
+        then
+            log "INFO" "Got it $ECHO_SERVER_IP_ADDRESS"
+            ATTEMPTS=11
+        else
+		sleep $WAIT_TIME_BETWEEN_RETRIES
+	fi
+    done
     sed -i -r "s/<<ECHO_SERVER_IP_ADDRESS>>/$ECHO_SERVER_IP_ADDRESS/g"    ./k6/test.js
     
     log "INFO" "I think it is installed.  Now you can run ./run.sh to kick off a k6 test"
