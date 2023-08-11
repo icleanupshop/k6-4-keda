@@ -20,6 +20,7 @@ function help()
    echo "options:"
    echo "i     install k3d with KEDA and local statsD for NR."
    echo "k     NR ingest license key."
+   echo "q     NR browse license key."
    echo "a     NR account number."
    echo "e     To use NR EU, by default statsD will use the US NR."
    echo
@@ -62,7 +63,6 @@ function install () {
         echo "INFO: I can see it, I can see it! But, is it the right version..."
         k3d_version_output=`k3d --version`
         k3d_version=`echo $k3d_version_output | cut -d ' ' -f 3`
-        echo $k3d_version
         if [ $k3d_version == 'v5.5.2' ]
         then
             echo "INFO: Found the right version, v5.5.2"
@@ -129,8 +129,12 @@ function install () {
     helm install keda kedacore/keda --namespace keda --create-namespace
 
     #Install the KEDA scaledobject CRD for a simple scaling event
-    ( cat echo-server/keda.yaml | NR_ACCOUNT_ID=${NR_ACCOUNT_ID} NR_API_KEY=${NR_API_KEY} NR_REGION=${NR_REGION} envsubst) | k apply -f -
+    ( cat echo-server/keda.yaml | NR_ACCOUNT_ID=${NR_ACCOUNT_ID} NR_BROWSE_KEY=${NR_BROWSE_KEY} NR_REGION=${NR_REGION} envsubst) | k apply -f - 
 
+    
+    ECHO_SERVER_IP_ADDRESS=`kubectl  get service helloweb | grep -v NAME |  tr -s ' ' | cut -d ' ' -f 4`
+    sed -i -r "s/<<ECHO_SERVER_IP_ADDRESS>>/$ECHO_SERVER_IP_ADDRESS/g"    ./k6/test.js
+    
     log "INFO" "I think it is installed.  Now you can run ./run.sh to kick off a k6 test"
 
 
@@ -143,7 +147,7 @@ function install () {
 # Process the input options. Add options as needed.        #
 ############################################################
 # Get the options
-while getopts "h:e:a:k:" option; do
+while getopts "h:e:a:k:q:" option; do
    case $option in
       h) # display Help
          help
@@ -153,8 +157,10 @@ while getopts "h:e:a:k:" option; do
          NR_REGION="EU";;
       a) # Set NR account number
          NR_ACCOUNT_ID=$OPTARG;;
-      k) 
+      k) #Set NR ingest(write) key
          NR_API_KEY=$OPTARG;;
+      q) #Set NR browse(read only) key so KEDA scaled objects can send NRQL
+         NR_BROWSE_KEY=$OPTARG;;   
      \?) # Invalid option
          echo "Error: Invalid option"
          exit;;    

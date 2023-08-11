@@ -31,7 +31,7 @@ spec:
       # Required: Account - Subaccount to run the query on
       account: "$NR_ACCOUNT_ID"
       # Required: QueryKey - Api key to connect to New Relic
-      queryKey: "$NR_API_KEY"
+      queryKey: "$NR_BROWSE_KEY"
       # Optional: nrRegion - Region to query data for. Default value is US.
       region: "$NR_REGION"
       # Optional: noDataError - If the query returns no data should this be treated as an error. Default value is false.

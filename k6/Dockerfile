@@ -14,10 +14,6 @@ RUN echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.
 RUN apt-get update
 RUN apt-get install k6
 
-RUN mkdir -p /test_scripts
-COPY test.js /test_scripts/ 
-COPY start.sh / 
-RUN chmod 755 /start.sh
 
 # influxdata-archive_compat.key GPG fingerprint:
 #     9D53 9D90 D332 8DC7 D6C8 D3B9 D8FF 8E1F 7DF8 B07E
@@ -39,5 +35,10 @@ RUN echo '393e8779c89ac8d958f81f942f9ad7fb82a25e133faddaf92e15b16e6ac9ce4c influ
 RUN echo 'deb [signed-by=/etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg] https://repos.influxdata.com/debian stable main' | tee /etc/apt/sources.list.d/influxdata.list
 
 RUN apt-get update && apt-get install telegraf
+
+RUN mkdir -p /test_scripts
+COPY test.js /test_scripts/ 
+COPY start.sh / 
+RUN chmod 755 /start.sh
 
 ENTRYPOINT /start.sh

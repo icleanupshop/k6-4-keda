@@ -1,5 +1,6 @@
 influxd &
 
+
 export INFLUXDB_TOKEN=${INFLUXDB_TOKEN:=`uuid`}
 export INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD:='changeMe'}
 export INFLUXDB_HOST=${INFLUXDB_HOST:='http://localhost'}
